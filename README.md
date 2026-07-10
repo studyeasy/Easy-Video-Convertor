@@ -70,6 +70,14 @@ scripts\build.bat            :: build dist\EasyVideoConverter\EasyVideoConverter
 scripts\build-installer.bat  :: build dist\EasyVideoConverter-Setup-1.0.0.exe (needs Inno Setup 6)
 ```
 
+### Generate the installer (.exe) — step by step
+
+1. **Install the prerequisites** — [Python 3.10+](https://www.python.org/downloads/) and [Inno Setup 6](https://jrsoftware.org/isdl.php) (only needed for the final step).
+2. **Set up the environment** — from the `Source Code` folder run `scripts\setup.bat`. This creates the `.venv`, installs all Python dependencies, and downloads the bundled FFmpeg binaries.
+3. **Build the app** — run `scripts\build.bat`. PyInstaller produces the standalone app at `dist\EasyVideoConverter\EasyVideoConverter.exe`.
+4. **Build the installer** — run `scripts\build-installer.bat`. Inno Setup packages everything into `dist\EasyVideoConverter-Setup-1.0.0.exe`.
+5. Done — that single setup file is what users install (the same file served at [tools.dubnext.com](https://tools.dubnext.com/tools/easy-video-converter)).
+
 ### Headless test mode
 
 ```bat
