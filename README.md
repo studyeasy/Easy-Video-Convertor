@@ -14,7 +14,7 @@ Built with **Python + PySide6 (Qt)**, packaged into a standalone `.exe` with **P
 
 **[🌐 Download from tools.dubnext.com](https://tools.dubnext.com/tools/easy-video-converter)** — the easiest way to get the latest setup.
 
-**[⬇ Download EasyVideoConverter-Setup-1.0.0.exe](EasyVideoConverter-Setup-1.0.0.exe)** (Windows 10/11, 64-bit, ~163 MB)
+**[⬇ Download EasyVideoConverter-Setup-1.0.0.exe](https://tools.dubnext.com/download/EasyVideoConverter-Setup-1.0.0.exe)** (Windows 10/11, 64-bit, ~163 MB)
 
 Run the installer and you're done — FFmpeg and the AI models are bundled in, nothing else to install. No admin rights required. Also available on the [Releases page](https://github.com/studyeasy/Easy-Video-Convertor/releases).
 
