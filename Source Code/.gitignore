@@ -1,0 +1,9 @@
+.venv/
+build/
+dist/
+__pycache__/
+*.pyc
+
+# Bundled FFmpeg binaries (~170 MB) are not tracked in git.
+# scripts\setup.bat downloads them automatically (see scripts\get-ffmpeg.ps1).
+vendor/ffmpeg/

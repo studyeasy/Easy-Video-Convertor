@@ -27,26 +27,35 @@ The rest of this page is for people who want to build the app from source — mo
 
 ## Project layout
 
+All source lives under [`Source Code/`](Source%20Code); the repository root keeps
+only this README, the changelog, and the installer download.
+
 ```
-run_app.py                     Entry point
-easyvideoconverter/            Application package
-  app.py                       Bootstrap + entry points (normal / --screenshot / --autotest)
-  main_window.py               PySide6 UI
-  backend.py                   FFmpeg discovery, encoder detection, probing, arg building
-  converter.py                 Background conversion queue (QThread)
-  effects.py                   AI background blur (RVM matting + maskedmerge pipeline)
-  styles.py                    Dark-theme QSS
-vendor/ffmpeg/                 Bundled ffmpeg.exe + ffprobe.exe (+ shared DLLs)
-vendor/models/                 RVM matting model (ONNX) + RNNoise model
-assets/                        Icon
-scripts/                       setup / run / build / build-installer batch files
-installer/EasyVideoConverter.iss   Inno Setup script
-EasyVideoConverter.spec        PyInstaller spec
+Source Code/
+  run_app.py                     Entry point
+  easyvideoconverter/            Application package
+    app.py                       Bootstrap + entry points (normal / --screenshot / --autotest)
+    main_window.py               PySide6 UI
+    backend.py                   FFmpeg discovery, encoder detection, probing, arg building
+    converter.py                 Background conversion queue (QThread)
+    effects.py                   AI background blur (RVM matting + maskedmerge pipeline)
+    styles.py                    Dark-theme QSS
+  vendor/ffmpeg/                 Bundled ffmpeg.exe + ffprobe.exe (fetched by setup)
+  vendor/models/                 RVM matting model (ONNX) + RNNoise model
+  assets/                        Icon
+  scripts/                       setup / run / build / build-installer batch files
+  installer/EasyVideoConverter.iss   Inno Setup script
+  EasyVideoConverter.spec        PyInstaller spec
+  requirements.txt
+  LICENSE                        MIT
 ```
 
 ## Build from source
 
+All commands are run from the `Source Code` folder:
+
 ```bat
+cd "Source Code"
 scripts\setup.bat            :: create .venv, install deps, download bundled FFmpeg
 scripts\run.bat              :: run the app from source
 scripts\build.bat            :: build dist\EasyVideoConverter\EasyVideoConverter.exe
