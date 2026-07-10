@@ -1,10 +1,18 @@
 # Easy Video Converter
 
+<h1 align="center">🌐 Visit <a href="https://tools.dubnext.com/tools/easy-video-converter">tools.dubnext.com</a> to download Easy Video Converter</h1>
+
+<p align="center">
+  <a href="https://tools.dubnext.com/tools/easy-video-converter"><img src="https://img.shields.io/badge/⬇%20Download%20the%20setup-tools.dubnext.com-7C3AED?style=for-the-badge&logo=windows&logoColor=white" alt="Download Easy Video Converter from tools.dubnext.com"></a>
+</p>
+
 A simple native **Windows desktop app** that shrinks videos using modern codecs (AV1 / HEVC) to save disk space — without over-processing them. Frame rate, colors, and audio are left alone whenever possible; only the video encoding is modernized.
 
 Built with **Python + PySide6 (Qt)**, packaged into a standalone `.exe` with **PyInstaller**, and shipped as a Windows **Inno Setup** installer. FFmpeg is bundled inside the app, so there is nothing else to install.
 
 ## Download
+
+**[🌐 Download from tools.dubnext.com](https://tools.dubnext.com/tools/easy-video-converter)** — the easiest way to get the latest setup.
 
 **[⬇ Download EasyVideoConverter-Setup-1.0.0.exe](EasyVideoConverter-Setup-1.0.0.exe)** (Windows 10/11, 64-bit, ~163 MB)
 
