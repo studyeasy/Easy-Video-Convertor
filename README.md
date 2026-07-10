@@ -4,6 +4,14 @@ A simple native **Windows desktop app** that shrinks videos using modern codecs 
 
 Built with **Python + PySide6 (Qt)**, packaged into a standalone `.exe` with **PyInstaller**, and shipped as a Windows **Inno Setup** installer. FFmpeg is bundled inside the app, so there is nothing else to install.
 
+## Download
+
+**[⬇ Download EasyVideoConverter-Setup-1.0.0.exe](https://github.com/studyeasy/Easy-Video-Convertor/releases/latest/download/EasyVideoConverter-Setup-1.0.0.exe)** (Windows 10/11, 64-bit, ~163 MB)
+
+Run the installer and you're done — FFmpeg and the AI models are bundled in, nothing else to install. No admin rights required. See [all releases](https://github.com/studyeasy/Easy-Video-Convertor/releases) for older versions.
+
+The rest of this page is for people who want to build the app from source — most users just need the download above.
+
 ## Features
 
 - **Modern codecs** — AV1 (best compression) and HEVC, with H.264 for maximum compatibility. *Auto* picks the most space-efficient codec your hardware supports.
