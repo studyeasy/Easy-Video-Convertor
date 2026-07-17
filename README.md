@@ -22,7 +22,8 @@ The rest of this page is for people who want to build the app from source — mo
 
 ## Features
 
-- **Modern codecs** — AV1 (best compression) and HEVC, with H.264 for maximum compatibility. *Auto* picks the most space-efficient codec your hardware supports.
+- **Modern codecs** — AV1 (best compression), HEVC, H.264, VP9 (open web codec), and ProRes (editing-grade, MOV + PCM audio). *Auto* picks the most space-efficient codec your hardware supports.
+- **Max compatibility mode** — one switch that outputs edit-friendly files: H.264 High profile, MP4, constant frame rate, regular keyframes, 8-bit yuv420p, 48 kHz AAC. Files are a bit larger, but Camtasia, Premiere, Resolve, and other editing tools import and scrub them without crashing.
 - **GPU acceleration** — detects NVIDIA (NVENC), Intel (QuickSync), and AMD (AMF) hardware encoders at startup and uses the best available. Falls back to CPU encoding (SVT-AV1 / x265) on machines without a supported GPU. If a GPU encode fails mid-file, that file is automatically retried on the CPU.
 - **Batch processing** — drag & drop videos or whole folders, or use *Import folder* to queue every video in a folder (subfolders included).
 - **Resolution** — keep the original, or downscale to 4K / 1440p / 1080p / 720p. Videos are never upscaled.
@@ -67,7 +68,7 @@ cd "Source Code"
 scripts\setup.bat            :: create .venv, install deps, download bundled FFmpeg
 scripts\run.bat              :: run the app from source
 scripts\build.bat            :: build dist\EasyVideoConverter\EasyVideoConverter.exe
-scripts\build-installer.bat  :: build dist\EasyVideoConverter-Setup-1.0.0.exe (needs Inno Setup 6)
+scripts\build-installer.bat  :: build dist\EasyVideoConverter-Setup-1.1.0.exe (needs Inno Setup 6)
 ```
 
 ### Generate the installer (.exe) — step by step
@@ -75,7 +76,7 @@ scripts\build-installer.bat  :: build dist\EasyVideoConverter-Setup-1.0.0.exe (n
 1. **Install the prerequisites** — [Python 3.10+](https://www.python.org/downloads/) and [Inno Setup 6](https://jrsoftware.org/isdl.php) (only needed for the final step).
 2. **Set up the environment** — from the `Source Code` folder run `scripts\setup.bat`. This creates the `.venv`, installs all Python dependencies, and downloads the bundled FFmpeg binaries.
 3. **Build the app** — run `scripts\build.bat`. PyInstaller produces the standalone app at `dist\EasyVideoConverter\EasyVideoConverter.exe`.
-4. **Build the installer** — run `scripts\build-installer.bat`. Inno Setup packages everything into `dist\EasyVideoConverter-Setup-1.0.0.exe`.
+4. **Build the installer** — run `scripts\build-installer.bat`. Inno Setup packages everything into `dist\EasyVideoConverter-Setup-1.1.0.exe`.
 5. Done — that single setup file is what users install (the same file served at [tools.dubnext.com](https://tools.dubnext.com/tools/easy-video-converter)).
 
 ### Headless test mode

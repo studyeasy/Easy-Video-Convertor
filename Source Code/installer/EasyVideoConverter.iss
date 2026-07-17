@@ -2,7 +2,7 @@
 ; Build the app first (scripts\build.bat), then run scripts\build-installer.bat
 
 #define MyAppName "Easy Video Converter"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Chaand Sheikh"
 #define MyAppURL "https://www.linkedin.com/in/chand-sheikh/"
 #define MyAppExeName "EasyVideoConverter.exe"

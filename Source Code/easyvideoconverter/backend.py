@@ -33,11 +33,12 @@ HW_ENCODERS = [
     "av1_qsv", "hevc_qsv", "h264_qsv",
     "av1_amf", "hevc_amf", "h264_amf",
 ]
-CPU_ENCODERS = ["libsvtav1", "libx265", "libx264"]
+CPU_ENCODERS = ["libsvtav1", "libx265", "libx264", "libvpx-vp9", "prores_ks"]
 
 # Per-encoder quality values for High / Balanced / Smallest
 QUALITY = {
     "libsvtav1":  {"high": 26, "balanced": 32, "small": 40},
+    "libvpx-vp9": {"high": 28, "balanced": 33, "small": 38},
     "av1_nvenc":  {"high": 28, "balanced": 33, "small": 38},
     "av1_qsv":    {"high": 26, "balanced": 32, "small": 38},
     "av1_amf":    {"high": 26, "balanced": 32, "small": 38},
@@ -50,6 +51,9 @@ QUALITY = {
     "h264_qsv":   {"high": 21, "balanced": 24, "small": 28},
     "h264_amf":   {"high": 21, "balanced": 24, "small": 28},
 }
+
+# ProRes uses profiles instead of CRF (3 = HQ, 2 = Standard, 1 = LT)
+PRORES_PROFILE = {"high": 3, "balanced": 2, "small": 1}
 
 
 def resource_path(rel: str) -> str:
@@ -208,6 +212,8 @@ class Backend:
             "av1": ("av1_nvenc", "av1_qsv", "av1_amf", "libsvtav1"),
             "hevc": ("hevc_nvenc", "hevc_qsv", "hevc_amf", "libx265"),
             "h264": ("h264_nvenc", "h264_qsv", "h264_amf", "libx264"),
+            "vp9": ("libvpx-vp9",),
+            "prores": ("prores_ks",),
         }
         return any(e.get(x) for x in table.get(codec, ()))
 
@@ -218,13 +224,15 @@ class Backend:
             "av1": ["av1_nvenc", "av1_qsv", "av1_amf", "libsvtav1"],
             "hevc": ["hevc_nvenc", "hevc_qsv", "hevc_amf", "libx265"],
             "h264": ["h264_nvenc", "h264_qsv", "h264_amf", "libx264"],
+            "vp9": ["libvpx-vp9"],
+            "prores": ["prores_ks"],
         }
         if codec == "auto":
             order = (chains["av1"] + chains["hevc"]) if use_gpu else ["libsvtav1", "libx265"]
         else:
-            order = chains[codec] if use_gpu else [chains[codec][3]]
+            order = chains[codec] if use_gpu else [chains[codec][-1]]
         for enc in order:
-            if not use_gpu and not enc.startswith("lib"):
+            if not use_gpu and enc.startswith(("av1_", "hevc_", "h264_")):
                 continue
             if e.get(enc):
                 return enc
@@ -285,9 +293,17 @@ class Backend:
         }
 
     # -- ffmpeg argument construction -------------------------------------
-    def _video_args(self, encoder: str, quality: str, ten_bit: bool, for_mp4: bool) -> list[str]:
-        q = str(QUALITY[encoder][quality])
+    def _video_args(self, encoder: str, quality: str, ten_bit: bool, for_mp4: bool,
+                    max_compat: bool = False) -> list[str]:
+        if max_compat:
+            ten_bit = False  # editors want plain 8-bit yuv420p
         args = ["-c:v", encoder]
+        if encoder == "prores_ks":
+            # ProRes is profile-based, not CRF-based; 4:2:2 10-bit is the standard
+            args += ["-profile:v", str(PRORES_PROFILE[quality]),
+                     "-vendor", "apl0", "-pix_fmt", "yuv422p10le"]
+            return args
+        q = str(QUALITY[encoder][quality])
         if encoder in ("av1_nvenc", "hevc_nvenc", "h264_nvenc"):
             args += ["-preset", "p6", "-tune", "hq", "-rc", "vbr", "-cq", q, "-b:v", "0",
                      "-pix_fmt", "p010le" if (ten_bit and encoder != "h264_nvenc") else "yuv420p"]
@@ -298,22 +314,36 @@ class Backend:
             args += ["-quality", "quality", "-rc", "cqp", "-qp_i", q, "-qp_p", q, "-pix_fmt", "yuv420p"]
         elif encoder == "libsvtav1":
             args += ["-crf", q, "-preset", "6", "-pix_fmt", "yuv420p10le" if ten_bit else "yuv420p"]
+        elif encoder == "libvpx-vp9":
+            args += ["-crf", q, "-b:v", "0", "-deadline", "good", "-cpu-used", "2",
+                     "-row-mt", "1", "-pix_fmt", "yuv420p10le" if ten_bit else "yuv420p"]
         elif encoder == "libx265":
             args += ["-crf", q, "-preset", "medium", "-pix_fmt", "yuv420p10le" if ten_bit else "yuv420p"]
         elif encoder == "libx264":
             args += ["-crf", q, "-preset", "slow", "-pix_fmt", "yuv420p"]
         if for_mp4 and (encoder == "libx265" or encoder.startswith("hevc_")):
             args += ["-tag:v", "hvc1"]
+        if max_compat and ("264" in encoder):
+            # Constrain the stream so editors (Camtasia, Premiere…) parse it easily
+            args += ["-profile:v", "high", "-level", "4.2"]
         return args
 
-    def output_ext(self, in_path: str) -> str:
+    def output_ext(self, in_path: str, settings: dict | None = None) -> str:
+        s = settings or {}
+        if s.get("max_compat"):
+            return ".mp4"
+        codec = s.get("codec", "")
+        if codec == "prores":
+            return ".mov"
+        if codec == "vp9":
+            return ".mkv"
         return ".mp4" if os.path.splitext(in_path)[1].lower() in (".mp4", ".mov", ".m4v") else ".mkv"
 
     def sub_args(self, info: dict, out_ext: str) -> list[str]:
         subs = info["sub_codecs"]
         if subs and out_ext == ".mkv":
             return ["-map", "0:s?", "-c:s", "copy"]
-        if subs and out_ext == ".mp4" and all(c in TEXT_SUB_CODECS for c in subs):
+        if subs and out_ext in (".mp4", ".mov") and all(c in TEXT_SUB_CODECS for c in subs):
             return ["-map", "0:s?", "-c:s", "mov_text"]
         return []
 
@@ -328,7 +358,15 @@ class Backend:
         if settings.get("normalize_audio"):
             af.append("loudnorm=I=-16:TP=-1.5:LRA=11")
             af.append("aresample=48000")
-        if not af and a0["codec"] in EFFICIENT_AUDIO:
+        if settings.get("codec") == "prores" and not settings.get("max_compat"):
+            # Editing workflows expect uncompressed PCM audio alongside ProRes
+            args = ["-af", ",".join(af)] if af else []
+            return args + ["-c:a", "pcm_s16le", "-ar", "48000"]
+        if settings.get("max_compat"):
+            # Always re-encode to plain 48 kHz AAC — no copied exotic streams
+            if "aresample=48000" not in af:
+                af.append("aresample=48000")
+        elif not af and a0["codec"] in EFFICIENT_AUDIO:
             return ["-c:a", "copy"]
         args = []
         if af:
@@ -348,13 +386,22 @@ class Backend:
 
     def build_args(self, in_path: str, info: dict, settings: dict, encoder: str):
         ten_bit = is_10bit(info["pix_fmt"])
-        out_ext = self.output_ext(in_path)
+        out_ext = self.output_ext(in_path, settings)
+        max_compat = bool(settings.get("max_compat"))
+        # Max compatibility trades size for robustness — always use High quality
+        quality = "high" if max_compat else settings["quality"]
 
         args = ["-hide_banner", "-y", "-i", in_path, "-map_metadata", "0",
                 "-map", "0:v:0", "-map", "0:a?"]
         args += self.sub_args(info, out_ext)
-        args += self._video_args(encoder, settings["quality"], ten_bit, out_ext == ".mp4")
+        args += self._video_args(encoder, quality, ten_bit, out_ext == ".mp4", max_compat)
         args += self.color_args(info)
+
+        if max_compat:
+            # Constant frame rate + regular keyframes: what editing tools
+            # (Camtasia, Premiere, Resolve…) need to scrub without crashing
+            fps = info.get("fps") or 30.0
+            args += ["-r", f"{fps:.6f}", "-g", str(max(1, round(fps * 2)))]
 
         # video filters: downscale-only resolution, optional grain reduction
         vf = []

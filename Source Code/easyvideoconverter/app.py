@@ -107,7 +107,7 @@ def run_autotest(inputs: list[str], output_dir: str, overrides: dict | None = No
         report_index[i] = {"name": os.path.basename(path), "in_size": info["size"]}
 
     settings = {"codec": "auto", "quality": "balanced", "resolution": "keep",
-                "use_gpu": True, "output_dir": output_dir,
+                "use_gpu": True, "max_compat": False, "output_dir": output_dir,
                 "blur": "off", "denoise_audio": False, "denoise_video": False,
                 "normalize_audio": False}
     if overrides:

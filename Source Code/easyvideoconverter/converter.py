@@ -73,7 +73,9 @@ class ConversionWorker(QObject):
     # -- one file ----------------------------------------------------------
     def _convert_one(self, job):
         b = self.backend
-        encoder = b.pick_encoder(self.settings["codec"], self.settings["use_gpu"])
+        # Max compatibility always encodes H.264 — the codec every tool handles
+        codec = "h264" if self.settings.get("max_compat") else self.settings["codec"]
+        encoder = b.pick_encoder(codec, self.settings["use_gpu"])
         if not encoder:
             raise RuntimeError("No suitable encoder available")
 
@@ -83,7 +85,7 @@ class ConversionWorker(QObject):
         blur_on = self.settings.get("blur", "off") != "off"
 
         def attempt(enc):
-            out_ext = b.output_ext(job["path"])
+            out_ext = b.output_ext(job["path"], self.settings)
             out_path = unique_output_path(self.settings["output_dir"], base, out_ext)
             self.job_started.emit(job["id"], enc)
             if blur_on:

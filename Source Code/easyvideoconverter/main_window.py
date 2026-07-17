@@ -37,7 +37,9 @@ def fmt_size(n: int) -> str:
 def encoder_label(enc: str) -> str:
     if not enc:
         return ""
-    codec = "AV1" if "av1" in enc else ("HEVC" if ("hevc" in enc or "265" in enc) else "H.264")
+    codec = ("AV1" if "av1" in enc else "VP9" if "vpx" in enc
+             else "ProRes" if "prores" in enc
+             else "HEVC" if ("hevc" in enc or "265" in enc) else "H.264")
     via = ("NVIDIA GPU" if "nvenc" in enc else "Intel GPU" if "qsv" in enc
            else "AMD GPU" if "amf" in enc else "CPU")
     return f"{codec} · {via}"
@@ -117,16 +119,25 @@ class ProbeTask(QRunnable):
 # segmented control
 # ---------------------------------------------------------------------------
 
-def make_segmented(options, current, on_change):
-    """options: list of (value, label). Returns (widget, button_group, buttons)."""
+def make_segmented(options, current, on_change, per_row=None):
+    """options: list of (value, label). Returns (widget, button_group, buttons).
+
+    per_row wraps the buttons onto multiple rows (still one exclusive group).
+    """
     row = QWidget()
-    lay = QHBoxLayout(row)
-    lay.setContentsMargins(0, 0, 0, 0)
-    lay.setSpacing(4)
+    if per_row:
+        lay = QGridLayout(row)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setHorizontalSpacing(4)
+        lay.setVerticalSpacing(4)
+    else:
+        lay = QHBoxLayout(row)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(4)
     group = QButtonGroup(row)
     group.setExclusive(True)
     buttons = {}
-    for value, label in options:
+    for i, (value, label) in enumerate(options):
         btn = QPushButton(label)
         btn.setProperty("seg", "true")
         btn.setCheckable(True)
@@ -134,7 +145,10 @@ def make_segmented(options, current, on_change):
         if value == current:
             btn.setChecked(True)
         group.addButton(btn)
-        lay.addWidget(btn)
+        if per_row:
+            lay.addWidget(btn, i // per_row, i % per_row)
+        else:
+            lay.addWidget(btn)
         buttons[value] = btn
         btn.clicked.connect(lambda _=False, v=value: on_change(v))
     return row, group, buttons
@@ -265,6 +279,7 @@ class MainWindow(QMainWindow):
             "quality": saved.get("quality", "balanced"),
             "resolution": saved.get("resolution", "keep"),
             "use_gpu": saved.get("use_gpu", True),
+            "max_compat": saved.get("max_compat", False),
             "blur": saved.get("blur", "off"),
             "denoise_audio": saved.get("denoise_audio", False),
             "denoise_video": saved.get("denoise_video", False),
@@ -443,11 +458,24 @@ class MainWindow(QMainWindow):
         head.setProperty("role", "settingsHead")
         lay.addWidget(head)
 
+        # max compatibility — one switch for edit-friendly output
+        self.compat_check = QCheckBox("Max compatibility (for editing tools)")
+        self.compat_check.setChecked(self.settings["max_compat"])
+        self.compat_check.setCursor(Qt.PointingHandCursor)
+        self.compat_check.toggled.connect(self._on_max_compat)
+        lay.addWidget(self.compat_check)
+        self.compat_hint = self._hint(
+            "H.264 · MP4 · constant frame rate · standard 8-bit color · 48 kHz AAC. "
+            "Files are a bit larger, but Camtasia, Premiere, and other editors "
+            "handle them without crashing.")
+        lay.addWidget(self.compat_hint)
+
         # codec
         lay.addWidget(self._setting_label("Codec"))
         self.codec_row, self.codec_group, self.codec_buttons = make_segmented(
-            [("auto", "Auto"), ("av1", "AV1"), ("hevc", "HEVC"), ("h264", "H.264")],
-            self.settings["codec"], self._on_codec)
+            [("auto", "Auto"), ("av1", "AV1"), ("hevc", "HEVC"),
+             ("h264", "H.264"), ("vp9", "VP9"), ("prores", "ProRes")],
+            self.settings["codec"], self._on_codec, per_row=3)
         lay.addWidget(self.codec_row)
         self.codec_hint = self._hint("")
         lay.addWidget(self.codec_hint)
@@ -613,12 +641,33 @@ class MainWindow(QMainWindow):
         self._update_codec_hint()
         self._persist()
 
+    def _on_max_compat(self, on):
+        self.settings["max_compat"] = on
+        self._apply_compat_lock()
+        self._persist()
+
+    def _apply_compat_lock(self):
+        """Max compatibility overrides codec + quality, so lock those controls."""
+        on = self.settings["max_compat"]
+        for value, btn in self.codec_buttons.items():
+            btn.setEnabled(not on and not self.running
+                           and (value == "auto" or self.backend.codec_available(value)))
+        for b in self.quality_group.buttons():
+            b.setEnabled(not on and not self.running)
+        if on:
+            self.codec_hint.setText("Codec is locked to H.264 while Max compatibility is on.")
+        else:
+            self._update_codec_hint()
+
     def _update_codec_hint(self):
         hints = {
             "auto": "Auto picks the most space-efficient codec your hardware supports.",
             "av1": "AV1 — newest codec, best compression. Playback needs a recent device.",
             "hevc": "HEVC (H.265) — great compression, plays almost everywhere.",
             "h264": "H.264 — largest files of the three, maximum compatibility.",
+            "vp9": "VP9 — open web codec (YouTube). Good compression, wide support.",
+            "prores": "ProRes — editing-grade codec (MOV + PCM audio). Very large "
+                      "files, but every editor scrubs it flawlessly.",
         }
         self.codec_hint.setText(hints[self.settings["codec"]])
 
@@ -657,9 +706,7 @@ class MainWindow(QMainWindow):
             self.gpu_check.setChecked(False)
             self.gpu_check.setEnabled(False)
 
-        for value, btn in self.codec_buttons.items():
-            if value != "auto":
-                btn.setEnabled(self.backend.codec_available(value))
+        self._apply_compat_lock()
 
         self._update_convert_enabled()
 
@@ -822,15 +869,10 @@ class MainWindow(QMainWindow):
         self.cancel_btn.setVisible(on)
         self.convert_btn.setVisible(not on)
         self.overall.setVisible(on)
-        for w in (self.codec_row, self.quality_group, self.res_group):
-            pass
-        for btn in list(self.codec_buttons.values()):
-            btn.setEnabled(not on and (btn is self.codec_buttons["auto"]
-                                       or self.backend.codec_available(
-                                           [k for k, v in self.codec_buttons.items() if v is btn][0])))
-        for grp in (self.quality_group, self.res_group):
-            for b in grp.buttons():
-                b.setEnabled(not on)
+        self._apply_compat_lock()
+        self.compat_check.setEnabled(not on)
+        for b in self.res_group.buttons():
+            b.setEnabled(not on)
         engine = getattr(self.backend, "matting", None)
         blur_ok = engine is not None and engine.available
         for value, b in self.blur_buttons.items():

@@ -147,7 +147,7 @@ class BlurPipeline:
         s = self.settings
         w, h, _ = output_dims(info, s)
         fps = info.get("fps") or 30.0
-        out_ext = b.output_ext(self.in_path)
+        out_ext = b.output_ext(self.in_path, s)
 
         level = s.get("blur", "medium")
         sigma = max(2, round(BLUR_SIGMA[level] * h / 1080))
@@ -183,9 +183,13 @@ class BlurPipeline:
             "-map_metadata", "0",
         ]
         enc_cmd += b.sub_args(info, out_ext)
+        max_compat = bool(s.get("max_compat"))
+        quality = "high" if max_compat else s["quality"]
         # blur path renders 8-bit SDR frames (RGB round-trip); HDR flags dropped
-        enc_cmd += b._video_args(self.encoder, s["quality"], False, out_ext == ".mp4")
+        enc_cmd += b._video_args(self.encoder, quality, False, out_ext == ".mp4", max_compat)
         enc_cmd += b.audio_args(info, s)
+        if max_compat:
+            enc_cmd += ["-g", str(max(1, round(fps * 2)))]
         if out_ext == ".mp4":
             enc_cmd += ["-movflags", "+faststart"]
         enc_cmd.append(self.out_path)

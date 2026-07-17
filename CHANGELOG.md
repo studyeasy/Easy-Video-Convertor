@@ -2,6 +2,25 @@
 
 All notable changes to Easy Video Converter are documented here.
 
+## 1.1.0 — 2026-07-17
+
+### Added
+- **Max compatibility mode** — one switch that produces edit-friendly files:
+  H.264 (High profile, level 4.2), MP4, constant frame rate, regular keyframes
+  (2 s GOP), standard 8-bit yuv420p color, and 48 kHz AAC audio. Files are a
+  bit larger, but editing tools (Camtasia, Premiere, Resolve…) scrub and import
+  them without crashing. Fixes crashes caused by AV1/HEVC 10-bit or
+  variable-frame-rate output being fed into editors.
+- **VP9 codec** (libvpx-vp9) — the open web codec used by YouTube; output goes
+  to MKV.
+- **ProRes codec** (prores_ks) — editing-grade intermediate codec with MOV
+  container and uncompressed PCM audio; very large files, flawless scrubbing.
+  Quality presets map to ProRes HQ / Standard / LT profiles.
+
+### Changed
+- Codec picker now wraps onto two rows (Auto / AV1 / HEVC / H.264 / VP9 /
+  ProRes).
+
 ## 1.0.0 — 2026-07-10
 
 Initial release.
