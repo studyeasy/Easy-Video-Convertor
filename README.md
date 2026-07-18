@@ -14,7 +14,7 @@ Built with **Python + PySide6 (Qt)**, packaged into a standalone `.exe` with **P
 
 **[🌐 Download from tools.dubnext.com](https://tools.dubnext.com/tools/easy-video-converter)** — the easiest way to get the latest setup.
 
-**[⬇ Download EasyVideoConverter-Setup-1.0.0.exe](https://tools.dubnext.com/download/EasyVideoConverter-Setup-1.0.0.exe)** (Windows 10/11, 64-bit, ~163 MB)
+**[⬇ Download EasyVideoConverter-Setup-1.1.0.exe](https://tools.dubnext.com/download/EasyVideoConverter-Setup-1.1.0.exe)** (Windows 10/11, 64-bit, ~164 MB)
 
 Run the installer and you're done — FFmpeg and the AI models are bundled in, nothing else to install. No admin rights required. Also available on the [Releases page](https://github.com/studyeasy/Easy-Video-Convertor/releases).
 
@@ -37,7 +37,8 @@ The rest of this page is for people who want to build the app from source — mo
 ## Project layout
 
 All source lives under [`Source Code/`](Source%20Code); the repository root keeps
-only this README, the changelog, and the installer download.
+only this README and the changelog. Installers are hosted on
+[tools.dubnext.com](https://tools.dubnext.com/tools/easy-video-converter), not in the repo.
 
 ```
 Source Code/

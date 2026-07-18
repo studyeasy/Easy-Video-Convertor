@@ -7,3 +7,6 @@ __pycache__/
 
 # Bundled FFmpeg binaries (~170 MB) are fetched by scripts/get-ffmpeg.ps1
 vendor/ffmpeg/
+
+# Installers are hosted on tools.dubnext.com (R2), not in the repo
+*.exe

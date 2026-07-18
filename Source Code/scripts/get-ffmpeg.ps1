@@ -1,4 +1,4 @@
-# Downloads the FFmpeg shared build bundled with the app (vendor\ffmpeg).
+﻿# Downloads the FFmpeg shared build bundled with the app (vendor\ffmpeg).
 # Uses the BtbN n8.1 stable build — the master builds require newer NVIDIA
 # drivers for NVENC than many machines have.
 $ErrorActionPreference = "Stop"
